@@ -3,12 +3,12 @@
 
 //TODO preprocessor directives (include can disappear) (maybe just use normal if?)
 
+let c_code = '#include <stdio.h>\nint main() {\n   // printf() displays the string inside quotation\n   printf("Hello, World!");\n   return 0;\n}';
 console.log(toPython(parse(lex(c_code))));
 
 function lex(str) {
 	let match, arr;
-	//TODO fix non-whitespace-separated as well as multi-char operators
-	while(str.length > 0 && (match = str.match(/\s*?(\S+)\s+/))[index] === 0) {
+	while(str.length > 0 && (match = str.match(/\s*?([\w+\s+|[^\w\s])/))[index] === 0) {
 		arr.push(str.match[1]);
 		str = str.slice(match[0].length);
 	}
@@ -18,21 +18,22 @@ function lex(str) {
 //two type qualifiers: const and volatile+ as well as static functions
 function parse(toks) {
 	intermediate = [];
+	let op;
 	while (toks.length > 0) {
-		if (toks[0] === '#') {
+		if ((op = toks.popOp()) !== undefined) {
+
+		} else if (toks[0] === '#') {
 			//TODO directive handling
-		} else if ()
+		} else if (toks[1]) {
+
+		}
 	}
 	return intermediate;
 }
 
-//idk what to name this: splices array to give the type on the top, or undefined if not a type
-function toksType(arr) {
-
-}
-
 function parseStmt(toks) {
-	switch(toks.shift()) {
+	let t = toks.shift();
+	switch(t) {
 		case 'if': 			return parseIf(toks);
 		case 'switch':		return parseSwitch(toks);
 		case 'while':		return parseWhile(toks);
@@ -45,7 +46,8 @@ function parseStmt(toks) {
 		case 'continue':	return parseContinue(toks);
 		case 'return':		return parseReturn(toks);
 		case 'typedef':		return parseTypedef(toks);
-		default: {}			//TODO function handling and expression statements
+		default:			toks.unshift(t);
+							return parseEtc(toks);
 	}		
 }
 
@@ -88,9 +90,10 @@ function parseWhile(toks) {
 function parseDo(toks) {
 	let stmt = toks.outStmt();
 	const paren = check(toks, '(', 'while must be followed by an argument in parentheses');
-	return new Do(matchBrackets(toks, paren), stmt);
+	out = new Do(matchBrackets(toks, paren), stmt);
 	if (toks.length === 0 || toks.shift() !== 'while')
 		throw 'a do needs a while following it';
+	return out;
 }
 
 function parseFor(toks) {
@@ -131,6 +134,28 @@ function parseTypedef(toks) {
 	return new Typedef(toks.shift(), toks.shift());
 }
 
+// decl, ass, def, expr(call)
+// type word
+// type word = val
+// TODO commas and chained assignment
+// word = val
+// 
+function parseEtc(toks) {
+	if (toks[0].test(/[A-Za-z_]\w*/) && toks[0] === '(') {
+
+	}
+}
+
+function parseType(toks) {
+	toks.popType(toks);	//discarding type
+	if (toks[0] === '(')
+
+}
+
+function parseWord(toks) {
+
+}
+
 function parseExpr(toks) {
 
 }
@@ -154,6 +179,19 @@ function popStmt(arr) {
 
 //syntactic sugar
 function outStmt(arr) { return parseStmt(popStmt(arr)); }
+
+//idk what to name this: splices array to give the type on the top, or undefined if not a type
+function popOp(arr) {
+	for (let i = 3; i >= 1; i--)
+		if (arr.length >= i && cOps.indexOf(arr.slice(0, i).join()) != -1)
+			return arr.splice(0, i);
+}
+
+function popType(arr) {
+	for (let i = 4; i >= 1; i--)
+		if (arr.length >= i && cTypes.indexOf(arr.slice(0, i).join(' ')) != -1)
+			return arr.splice(0, i);
+}
 
 //TODO make sure side effects are working
 function matchBrackets(arr, bracket) {
@@ -231,6 +269,13 @@ class Typedef extends Stmt {
 	}	
 }
 
+//unidentified args are not handled
+class Def extends Stmt {
+	constructor(args, stmt) {
+		Object.assign(this, {args, stmt});
+	}
+}
+
 class Expr {
 
 }
@@ -241,7 +286,16 @@ const keywords = [
 	'float', 'for', 'goto', 'if', 'int', 'long', 'register', 'return', 'short', 'signed', 'sizeof', 'static',
 	'struct', 'switch', 'typedef', 'union', 'unsigned', 'void', 'volatile', 'while'
 ] 
-const ctypes = []
+const cTypes = [
+	'char', 'signed char', 'unsigned char', 'short', 'short int', 'signed short', 'signed short int', 'unsigned short',
+	'unsigned short int', 'int', 'signed', 'signed int', 'unsigned', 'unsigned int', 'long', 'long int', 'signed long',
+	'signed long int', 'unsigned long', 'unsigned long int', 'long long', 'long long int', 'signed long long', 
+	'signed long long int', 'unsigned long long', 'unsigned long long int', 'float', 'double', 'long ', 'size_t', 'ptrdiff_t'
+]
+const cOps = [
+	'+', '-', '*', '/', '%', '&', '^', '|', '>', '<', '=', '<<', '>>', '+=', '-=', '*=', '/=', '%=', '&=', '^=',
+	'|=', '>=', '<=', '==', '<<=', '>>=', '&&', '||', '++', '--', '!=', ',', '?', ':'
+]
 const ignorable = [] //TODO this one is ignoreable functions like malloc
 
 
