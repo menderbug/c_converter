@@ -3,30 +3,27 @@
 
 //TODO preprocessor directives (include can disappear) (maybe just use normal if?)
 
-let c_code = '#include <stdio.h>\nint main() {\n   // printf() displays the string inside quotation\n   printf("Hello, World!");\n   return 0;\n}';
-console.log(toPython(parse(lex(c_code))));
-
 function lex(str) {
-	let match, arr;
-	while(str.length > 0 && (match = str.match(/\s*?([\w+\s+|[^\w\s])/))[index] === 0) {
-		arr.push(str.match[1]);
+	let match;
+	let toks = [];
+	while(str.length > 0 && (match = str.match(/\s*?(\w+\b|[^\w\s])/))['index'] === 0) {
+		toks.push(match[1]);
 		str = str.slice(match[0].length);
 	}
-	return arr;
+	return toks;
 }
 
-//two type qualifiers: const and volatile+ as well as static functions
+//two type qualifiers: const and volatile as well as static functions
 function parse(toks) {
 	intermediate = [];
-	let op;
+	let type;
 	while (toks.length > 0) {
-		if ((op = toks.popOp()) !== undefined) {
-
-		} else if (toks[0] === '#') {
-			//TODO directive handling
-		} else if (toks[1]) {
-
-		}
+		if (toks[0] === '#') {		//assuming no directives are used except include
+			toks.splice(0, 2)		//removes #include
+			matchBrackets(toks, '<');	//these two should effectively clear out the entire include
+			matchBrackets(toks, '"');
+		} else
+			return parseStmt(['{', ...toks, '}'])
 	}
 	return intermediate;
 }
@@ -39,7 +36,8 @@ function parseStmt(toks) {
 		case 'while':		return parseWhile(toks);
 		case 'do': 			return parseDo(toks);
 		case 'for':			return parseFor(toks);
-		case '{':			return parseBlock(toks);
+		case '{':			toks.unshift(t);
+							return parseBlock(matchBrackets(toks, '{'));
 		case ';': 			break;
 		//case 'goto'		TODO somehow
 		case 'break':		return parseBreak(toks);
@@ -54,8 +52,8 @@ function parseStmt(toks) {
 function parseIf(toks) {
 	const paren = check(toks, '(', 'while must be followed by an argument in parentheses');
 	let other;
-	if (arr[0] === 'else') {
-		arr.shift();
+	if (toks[0] === 'else') {
+		toks.shift();
 		other = toks.outStmt();
 	}
 	return new If(matchBrackets(toks, paren), toks.outStmt(), other);
@@ -106,8 +104,8 @@ function parseFor(toks) {
 
 function parseBlock(toks) {
 	let stmts = [];
-	while (toks.length > 0)
-		stmts.push(outStmt(arr));
+	while (toks.length > 0 && toks[0] !== '}')
+		stmts.push(outStmt(toks));
 	return stmts;
 }
 
@@ -141,78 +139,126 @@ function parseTypedef(toks) {
 // word = val
 // 
 function parseEtc(toks) {
-	if (toks[0].test(/[A-Za-z_]\w*/) && toks[0] === '(') {
-
-	}
+	if (popType(toks) !== undefined)
+		return parseType(toks);
+	else if (/[A-Za-z_]\w*/.test(toks[0]))
+		return parseWord(toks);	
+	else
+		return toks;
 }
 
 function parseType(toks) {
-	toks.popType(toks);	//discarding type
-	if (toks[0] === '(')
-
+	toks = popType(toks);	//discarding type
+	let name = toks.shift();
+	switch (toks[0]) {
+		case '(': 
+			return new Def(matchBrackets(toks, '('), outStmt(toks));		//note: this doesnt parse args and allows bracketless function definitions
+		case '=':
+			return parseExpr(toks.unshift(name));
+		case ';':
+			return undefined;
+		default: throw "something's wrong with that identifier";
+	}
 }
 
 function parseWord(toks) {
-
+	let name = toks.shift();
+	switch (toks[0]) {
+		case '(': 
+			return new Call(matchBrackets(toks, '('));
+		case '=':
+			return parseExpr(toks.unshift(name));
+		case ';':
+			return undefined;
+		default: throw "something's wrong with that identifier";
+	}
 }
 
+// im gonna try leaving expressions as arrays?
 function parseExpr(toks) {
+	let arr = [];
+	let t;
+	while (toks.length > 0) {
+		if ((t = popOp(toks)) !== undefined)
+			arr.push(t);
+		else						//ok i couldnt resist let me live my life
+			arr.push(pOps[t = toks.shift()] !== undefined ? pOps[t] : t);
+	}
 
+	if (arr.includes('?') && arr.includes(':')) {
+		let cond = arr.splice(0, arr.indexOf('?') + 1).slice(0, -1);
+		let yes = arr.splice(0, arr.indexOf(':') + 1).slice(0, -1);
+		return [...parseExpr(yes), 'if', ...parseExpr(cond), 'else', ...parseExpr(arr)];
+	}
+
+	let before = [], after = []
+
+	for (let i = 0; i < arr.length; i++) {
+		if (cAssOps.includes(arr[i]) && i != 1) 
+			
+	}
+
+	
+
+
+	return arr;
 }
 
 //get symbol while checking for error
-function check(arr, symb, error) {
-	if (arr[0] !== symb)
+function check(toks, symb, error) {
+	if (toks[0] !== symb)
 		throw error;
 }
 
 //TODO does this function need to exist or can it be folded into outStmt?
-function popStmt(arr) {
-	if (arr.length === 0) return [];
-	if (arr[0] === '{')
-		return matchBrackets(arr, symb);
-	else if (arr.indexOf(';') !== -1)
-		return arr.splice(0, arr.indexOf(';')).splice(-1, 1);
+function popStmt(toks) {
+	if (toks.length === 0) return [];
+	if (toks[0] === '{')
+		return matchBrackets(toks, symb);
+	else if (toks.includes(';'))
+		return toks.splice(0, toks.indexOf(';') + 1).slice(0, -1);
 	else
 		throw 'I think a missing semicolon? I\'m not sure';
 }
 
 //syntactic sugar
-function outStmt(arr) { return parseStmt(popStmt(arr)); }
+function outStmt(toks) { return parseStmt(popStmt(toks)); }
 
 //idk what to name this: splices array to give the type on the top, or undefined if not a type
-function popOp(arr) {
+function popOp(toks) {
 	for (let i = 3; i >= 1; i--)
-		if (arr.length >= i && cOps.indexOf(arr.slice(0, i).join()) != -1)
-			return arr.splice(0, i);
+		if (toks.length >= i && cOps.includes(toks.slice(0, i).join()))
+			return toks.splice(0, i);
 }
 
-function popType(arr) {
+function popType(toks) {
 	for (let i = 4; i >= 1; i--)
-		if (arr.length >= i && cTypes.indexOf(arr.slice(0, i).join(' ')) != -1)
-			return arr.splice(0, i);
+		if (toks.length >= i && cTypes.includes(toks.slice(0, i).join(' ')))
+			return toks.splice(0, i);
 }
 
-//TODO make sure side effects are working
-function matchBrackets(arr, bracket) {
-	const pairs = {'{':'}', '(':')', '[':']'}	//i dont think i need pointy brackets yet
-	arr.shift();		//removes the open bracket	
-	count = 1;	
+//returns a list of str tokens
+function matchBrackets(toks, bracket) {
 
-	for (let i = 0; i < arr.length; i++) {
-		if (arr[i] === bracket)
+	if (toks[0] !== bracket) return;
+
+	const pairs = {'{':'}', '(':')', '[':']', '<':'>', '"':'"'}	
+	toks.shift();		//removes the open bracket	
+	let count = 1;	
+
+	for (let i = 0; i < toks.length; i++) {
+		if (toks[i] === bracket)
 			count++;
-		else if (arr[i] === pairs[bracket])
+		else if (toks[i] === pairs[bracket])
 			count--;
 		if (count === 0)
-			return arr.splice(0, i).splice(-1, 1);
+			return toks.splice(0, i + 1).slice(0, -1);
 	}
 	throw 'Mismatched brackets';
 }
 
-function toPython() {
-	//TODO
-}
+//this checks if not an identifier, i know the naming is unclear
+function op(str) { return !/\w+/.test(str); }
 
 class Stmt {}
 
@@ -276,11 +322,17 @@ class Def extends Stmt {
 	}
 }
 
+class Call extends Stmt {
+	constructor(args) {
+		Object.assign(this, {args});
+	}
+}
+
 class Expr {
 
 }
 
-//TODO scoping stuff can be considered late, i dont wanna worry about storing variables
+//TODO scoping stuff can be considered later, i dont wanna worry about storing variables
 const keywords = [
 	'auto', 'break', 'case', 'char', 'const', 'continue', 'default', 'do', 'double', 'else', 'enum', 'extern',
 	'float', 'for', 'goto', 'if', 'int', 'long', 'register', 'return', 'short', 'signed', 'sizeof', 'static',
@@ -292,46 +344,30 @@ const cTypes = [
 	'signed long int', 'unsigned long', 'unsigned long int', 'long long', 'long long int', 'signed long long', 
 	'signed long long int', 'unsigned long long', 'unsigned long long int', 'float', 'double', 'long ', 'size_t', 'ptrdiff_t'
 ]
+
+//structs not handled (., ->, some others)
 const cOps = [
 	'+', '-', '*', '/', '%', '&', '^', '|', '>', '<', '=', '<<', '>>', '+=', '-=', '*=', '/=', '%=', '&=', '^=',
-	'|=', '>=', '<=', '==', '<<=', '>>=', '&&', '||', '++', '--', '!=', ',', '?', ':'
+	'|=', '>=', '<=', '==', '<<=', '>>=', '&&', '||', '++', '--', '!=', ',', '?', ':', '~'
 ]
+
+const cAssOps = ['=', '+=', '-=', '*=', '/=', '%=', '&=', '^=', '|=', '>=', '<=', '==', '<<=', '>>=']
+
+//easily substituted C -> python operators
+const pOps = {
+	'/':'//', '!':'not', '&&':'and', '||':'or' 
+}
+
 const ignorable = [] //TODO this one is ignoreable functions like malloc
 
-
-/*
 function tabbed(str) {
-	arr = str.split("\n");
+	toks = str.split("\n");
 	out = ""
-	for (const line of arr)
+	for (const line of toks) 
 		out += "\t" + line + "\n";
 	return out;
 }
 
-class List {
-
-	push(tok) {
-		if (this.tok == null)
-			return this.tok = tok;
-		let temp = this.tok 
-		while (temp.next != null)
-			temp = temp.next;
-		return temp.next = tok;
-	}
-
-	pop() {
-		const temp = tok;
-		this.tok = tok.next;
-		return temp.str;
-	}
-
-	peek() { return this.tok == null ? null : this.tok.str; }
-}
-
-class Token {
-	constructor(str, next) {
-		this.str = str;
-		this.next = next;
-	}
-}
-*/
+let c_code = '#include <stdio.h>\nint main() {\n   // printf() displays the string inside quotation\n   printf("Hello, World!");\n   return 0;\n}';
+// console.log(toPython(parse(lex(c_code))));
+console.log(parse(lex(c_code)));
