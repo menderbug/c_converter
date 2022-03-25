@@ -491,11 +491,19 @@ const pyOps = {
 const ignorable = [] //TODO this one is ignoreable functions like malloc
 
 function convert() {
-	return parse(lex(document.getElementById('input').value)).map(x => x.toString()).join('').replace(/\n    \n/g, '\n').replace(/;/g, '');
+	return parse(lex(document.getElementById('input').value)).map(x => x.toString()).join('').replace(/\n    \n/g, '\n');		//TODO where are new lines coming from
 }	
+
+function toHTML() {
+	// document.write('a<br>b');
+	// document.write(document.getElementById('input').value);
+	// document.write(parse(lex(document.getElementById('input').value)).join('').replace('/\n/g', '<br>'));
+	document.getElementById('output').value = convert();
+}
 
 var input = document.getElementById('input');
 addEventListener('input', onChange);
+addEventListener('input', tab);
 
 function onChange() {
 	let duration = 1000;
@@ -504,6 +512,19 @@ function onChange() {
 	timer = setTimeout(() => {
 		update();
 	}, duration);
+}
+
+function tab() {
+	if (e.keyCode === 9) {
+		e.preventDefault()
+	
+		textarea.setRangeText(
+			'  ',
+			textarea.selectionStart,
+			textarea.selectionStart,
+			'end'
+		)
+	}	
 }
 
 function update(){

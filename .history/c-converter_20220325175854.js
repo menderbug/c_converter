@@ -491,11 +491,12 @@ const pyOps = {
 const ignorable = [] //TODO this one is ignoreable functions like malloc
 
 function convert() {
-	return parse(lex(document.getElementById('input').value)).map(x => x.toString()).join('').replace(/\n    \n/g, '\n').replace(/;/g, '');
+	return parse(lex(document.getElementById('input').value)).map(x => x.toString()).join('').replace(/\n    \n/g, '\n');		//TODO where are new lines coming from
 }	
 
 var input = document.getElementById('input');
 addEventListener('input', onChange);
+addEventListener('input', tab);
 
 function onChange() {
 	let duration = 1000;

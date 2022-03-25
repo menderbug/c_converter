@@ -491,26 +491,36 @@ const pyOps = {
 const ignorable = [] //TODO this one is ignoreable functions like malloc
 
 function convert() {
-	return parse(lex(document.getElementById('input').value)).map(x => x.toString()).join('').replace(/\n    \n/g, '\n').replace(/;/g, '');
+	return parse(lex(document.getElementById('input').value)).map(x => x.toString()).join('').replace(/\n    \n/g, '\n');		//TODO where are new lines coming from
 }	
 
-var input = document.getElementById('input');
-addEventListener('input', onChange);
-
-function onChange() {
-	let duration = 1000;
-	let timer;
-	clearTimeout(timer);
-	timer = setTimeout(() => {
-		update();
-	}, duration);
+function toHTML() {
+	// document.write('a<br>b');
+	// document.write(document.getElementById('input').value);
+	// document.write(parse(lex(document.getElementById('input').value)).join('').replace('/\n/g', '<br>'));
+	document.getElementById('output').value = convert();
 }
 
-function update(){
-	document.getElementById('output').value = convert();
-}	
+//setup before functions
+var typingTimer;                //timer identifier
+var doneTypingInterval = 5000;  //time in ms, 5 seconds for example
+var $input = $('#myInput');
 
+//on keyup, start the countdown
+$input.on('keyup', function () {
+  clearTimeout(typingTimer);
+  typingTimer = setTimeout(doneTyping, doneTypingInterval);
+});
 
+//on keydown, clear the countdown 
+$input.on('keydown', function () {
+  clearTimeout(typingTimer);
+});
+
+//user is "finished typing," do something
+function doneTyping () {
+  //do something
+}
 
 
 /* module.exports = {

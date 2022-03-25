@@ -1,6 +1,8 @@
 //I'm working off the GNU C Reference Manual
 //limited right now to a main function, no function definitions are possible
 
+const { defaultMaxListeners, once } = require("events");
+
 //TODO preprocessor directives (include can disappear) (maybe just use normal if?)
 //TODO multi line comments
 //TODO string whitespace handling
@@ -29,7 +31,7 @@ function parse(toks) {
 			globals.push(outStmt(toks));
 		else
 			globals.push(outStmt(toks));
-	return globals;
+		return globals;
 }
 
 function parseStmt(toks) {
@@ -490,32 +492,13 @@ const pyOps = {
 
 const ignorable = [] //TODO this one is ignoreable functions like malloc
 
-function convert() {
-	return parse(lex(document.getElementById('input').value)).map(x => x.toString()).join('').replace(/\n    \n/g, '\n').replace(/;/g, '');
-}	
-
-var input = document.getElementById('input');
-addEventListener('input', onChange);
-
-function onChange() {
-	let duration = 1000;
-	let timer;
-	clearTimeout(timer);
-	timer = setTimeout(() => {
-		update();
-	}, duration);
-}
-
-function update(){
-	document.getElementById('output').value = convert();
-}	
+// let c_code = '#include <stdio.h>\nint main() {\n   // printf() displays the string inside quotation\n   printf("Hello, World!");\n   return 0;\n}';
+// console.log(parse(lex(c_code)) + '');
 
 
-
-
-/* module.exports = {
+module.exports = {
 	convert: function(str) {
+		let a = parse(lex(str));	//TODO remove
 		return parse(lex(str)).map(x => x.toString()).join('').replace(/\n    \n/g, '\n');		//TODO where are new lines coming from
 	}	
-};
-*/
+};6

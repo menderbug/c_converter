@@ -253,7 +253,7 @@ function popStmt(toks) {
 	const hacky = [...toks, '{', ';']
 	let i = Math.min(hacky.indexOf(';'), hacky.indexOf('{'))
 	if (hacky.indexOf(';') < hacky.indexOf('{'))
-		return toks.splice(0, i + 1);
+		return toks.splice(0, i + 1).slice(0, -1);
 	else
 		return toks.splice(0, i).concat(['{', ...matchBrackets(toks, '{'), '}']);
 }
@@ -491,7 +491,7 @@ const pyOps = {
 const ignorable = [] //TODO this one is ignoreable functions like malloc
 
 function convert() {
-	return parse(lex(document.getElementById('input').value)).map(x => x.toString()).join('').replace(/\n    \n/g, '\n').replace(/;/g, '');
+	return parse(lex(document.getElementById('input').value)).map(x => x.toString()).join('').replace(/\n    \n/g, '\n');		//TODO where are new lines coming from
 }	
 
 var input = document.getElementById('input');

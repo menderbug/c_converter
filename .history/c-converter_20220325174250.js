@@ -491,27 +491,17 @@ const pyOps = {
 const ignorable = [] //TODO this one is ignoreable functions like malloc
 
 function convert() {
-	return parse(lex(document.getElementById('input').value)).map(x => x.toString()).join('').replace(/\n    \n/g, '\n').replace(/;/g, '');
+	return parse(lex(document.getElementById('input').value)).map(x => x.toString()).join('').replace(/\n    \n/g, '\n');		//TODO where are new lines coming from
 }	
 
-var input = document.getElementById('input');
-addEventListener('input', onChange);
-
-function onChange() {
-	let duration = 1000;
-	let timer;
-	clearTimeout(timer);
-	timer = setTimeout(() => {
-		update();
-	}, duration);
+function toHTML() {
+	// document.write('a<br>b');
+	// document.write(document.getElementById('input').value);
+	// document.write(parse(lex(document.getElementById('input').value)).join('').replace('/\n/g', '<br>'));
+	document.getElementById('output').value = convert();
 }
 
-function update(){
-	document.getElementById('output').value = convert();
-}	
-
-
-
+function add(a, b) {return a + b;}
 
 /* module.exports = {
 	convert: function(str) {

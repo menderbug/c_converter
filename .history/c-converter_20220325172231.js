@@ -5,6 +5,32 @@
 //TODO multi line comments
 //TODO string whitespace handling
 
+const keywords = [
+	'auto', 'break', 'case', 'char', 'const', 'continue', 'default', 'do', 'double', 'else', 'enum', 'extern',
+	'float', 'for', 'goto', 'if', 'int', 'long', 'register', 'return', 'short', 'signed', 'sizeof', 'static',
+	'struct', 'switch', 'typedef', 'union', 'unsigned', 'void', 'volatile', 'while'
+];
+
+const cTypes = [
+	'void', 'char', 'signed char', 'unsigned char', 'short', 'short int', 'signed short', 'signed short int', 'unsigned short',
+	'unsigned short int', 'int', 'signed', 'signed int', 'unsigned', 'unsigned int', 'long', 'long int', 'signed long',
+	'signed long int', 'unsigned long', 'unsigned long int', 'long long', 'long long int', 'signed long long', 
+	'signed long long int', 'unsigned long long', 'unsigned long long int', 'float', 'double', 'long ', 'size_t', 'ptrdiff_t'
+];
+
+//structs not handled (., ->, some others)
+const cOps = [
+	'+', '-', '*', '/', '%', '&', '^', '|', '>', '<', '=', '<<', '>>', '+=', '-=', '*=', '/=', '%=', '&=', '^=',
+	'|=', '>=', '<=', '==', '<<=', '>>=', '&&', '||', '++', '--', '!=', ',', '?', ':', '~', '(', ')'
+];
+
+const cAssOps = ['=', '+=', '-=', '*=', '/=', '%=', '&=', '^=', '|=', '>=', '<=', '==', '<<=', '>>=']
+
+//easily substituted C -> python operators
+const pyOps = {
+	' / ':' // ', ' ! ':' not ', ' && ':' and ', ' || ':' or ', ' ; ':'\n' 
+};
+
 function lex(str) {
 	let match;
 	let re = /(".*?")|\s*?(\/\/.*?$|\/\*.*?\*\/|\w+\b|[^\w\s])/ms
@@ -29,7 +55,7 @@ function parse(toks) {
 			globals.push(outStmt(toks));
 		else
 			globals.push(outStmt(toks));
-	return globals;
+		return globals;
 }
 
 function parseStmt(toks) {
@@ -462,60 +488,25 @@ class Comment {
 }
 
 //TODO scoping stuff can be considered later, i dont wanna worry about storing variables
-const keywords = [
-	'auto', 'break', 'case', 'char', 'const', 'continue', 'default', 'do', 'double', 'else', 'enum', 'extern',
-	'float', 'for', 'goto', 'if', 'int', 'long', 'register', 'return', 'short', 'signed', 'sizeof', 'static',
-	'struct', 'switch', 'typedef', 'union', 'unsigned', 'void', 'volatile', 'while'
-];
 
-const cTypes = [
-	'void', 'char', 'signed char', 'unsigned char', 'short', 'short int', 'signed short', 'signed short int', 'unsigned short',
-	'unsigned short int', 'int', 'signed', 'signed int', 'unsigned', 'unsigned int', 'long', 'long int', 'signed long',
-	'signed long int', 'unsigned long', 'unsigned long int', 'long long', 'long long int', 'signed long long', 
-	'signed long long int', 'unsigned long long', 'unsigned long long int', 'float', 'double', 'long ', 'size_t', 'ptrdiff_t'
-];
-
-//structs not handled (., ->, some others)
-const cOps = [
-	'+', '-', '*', '/', '%', '&', '^', '|', '>', '<', '=', '<<', '>>', '+=', '-=', '*=', '/=', '%=', '&=', '^=',
-	'|=', '>=', '<=', '==', '<<=', '>>=', '&&', '||', '++', '--', '!=', ',', '?', ':', '~', '(', ')'
-];
-
-const cAssOps = ['=', '+=', '-=', '*=', '/=', '%=', '&=', '^=', '|=', '>=', '<=', '==', '<<=', '>>=']
-
-//easily substituted C -> python operators
-const pyOps = {
-	' / ':' // ', ' ! ':' not ', ' && ':' and ', ' || ':' or ', ' ; ':'\n' 
-};
 
 const ignorable = [] //TODO this one is ignoreable functions like malloc
 
 function convert() {
-	return parse(lex(document.getElementById('input').value)).map(x => x.toString()).join('').replace(/\n    \n/g, '\n').replace(/;/g, '');
+	return parse(lex(document.getElementById('input').value)).map(x => x.toString()).join('').replace(/\n    \n/g, '\n');		//TODO where are new lines coming from
 }	
 
-var input = document.getElementById('input');
-addEventListener('input', onChange);
-
-function onChange() {
-	let duration = 1000;
-	let timer;
-	clearTimeout(timer);
-	timer = setTimeout(() => {
-		update();
-	}, duration);
+function toHTML() {
+	// document.write(add(1, 1));
+	// document.write(document.getElementById('input').value);
+	document.write(parse(lex(document.getElementById('input').value)));
+	// document.write(convert());
 }
 
-function update(){
-	document.getElementById('output').value = convert();
-}	
+function add(a, b) {return a + b;}
 
-
-
-
-/* module.exports = {
+module.exports = {
 	convert: function(str) {
 		return parse(lex(str)).map(x => x.toString()).join('').replace(/\n    \n/g, '\n');		//TODO where are new lines coming from
 	}	
-};
-*/
+};6
