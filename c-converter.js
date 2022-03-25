@@ -239,15 +239,14 @@ function parseExpr(toks) {
 			arr[i] = name + ' := ' + name + ' ' + arr[i].slice(0, -1);
 			i--;
 		}
-
-		//synactical conversions
-		arr = arr.map(x => x in pyOps ? pyOps[x] : x);
 	}
 	
 	for (let i = 0; i < arr.length; i++)
-		if (cOps.includes(arr[i]))
-			arr[i] = ` ${arr[i]} `;
+		if (cOps.includes(arr[i]) && !['(', ')'].includes(arr[i]))
+			arr[i] = ` ${arr[i]} `;		//remove parentheses TODO TODO
 
+	//synactical conversions
+	arr = arr.map(x => x in pyOps ? pyOps[x] : x);		//TODO this is not working?		
 	return arr.join('');		//TODO UNLIKE OTHER PARSE FUNCTIONS, RETURNS STRING
 }
 
@@ -275,6 +274,7 @@ function popOp(toks) {
 }
 
 function popType(toks) {
+	if (toks[0] == 'const') toks.shift();		//just removing any const
 	for (let i = 4; i >= 1; i--)
 		if (toks.length >= i && cTypes.includes(toks.slice(0, i).join(' ')))
 			return toks.splice(0, i);
@@ -455,7 +455,11 @@ class Comment {
 		Object.assign(this, {txt});
 	}
 	toString() {
-		return `# ${this.txt.slice(this.txt.search(/[^\s\/]/))}\n`;	
+		if (this.txt.startsWith('//'))
+			return `# ${this.txt.slice(this.txt.search(/[^\s\/]/))}\n`;
+		else {
+			return '#' + this.txt.slice(2, -2).replace(/\n\s*\*/g, '\n#');
+		}	
 	}
 }
 
@@ -483,7 +487,7 @@ const cAssOps = ['=', '+=', '-=', '*=', '/=', '%=', '&=', '^=', '|=', '>=', '<='
 
 //easily substituted C -> python operators
 const pyOps = {
-	'/':'//', '!':'not', '&&':'and', '||':'or', ';':'\n' 
+	' / ':' // ', ' ! ':' not ', ' && ':' and ', ' || ':' or ', ' ; ':'\n' 
 };
 
 const ignorable = [] //TODO this one is ignoreable functions like malloc
