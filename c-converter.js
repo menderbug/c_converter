@@ -2,8 +2,6 @@
 //limited right now to a main function, no function definitions are possible
 
 //TODO preprocessor directives (include can disappear) (maybe just use normal if?)
-//TODO multi line comments
-//TODO string whitespace handling
 
 function lex(str) {
     let match;
@@ -241,14 +239,13 @@ function parseExpr(toks) {
     
     for (let i = 0; i < arr.length; i++)
         if (cOps.includes(arr[i]) && !['(', ')'].includes(arr[i]))
-            arr[i] = ` ${arr[i]} `;		//remove parentheses TODO TODO
+            arr[i] = ` ${arr[i]} `;	
 
     //synactical conversions
-    arr = arr.map(x => x in pyOps ? pyOps[x] : x);		//TODO this is not working?		
-    return arr.join('');		//TODO UNLIKE OTHER PARSE FUNCTIONS, RETURNS STRING
+    arr = arr.map(x => x in pyOps ? pyOps[x] : x);		//TODO maybe need a type table?	
+    return arr.join('');		//note: parseExpr returns a string instead of an object (maybe use a Expr wrapper?)
 }
 
-//TODO does this function need to exist or can it be folded into outStmt?		//TODO TODO TODO THIS DOESNT WORK AT ALL
 function popStmt(toks) {
     const hacky = [...toks, '{', ';']
     let i = Math.min(hacky.indexOf(';'), hacky.indexOf('{'))
@@ -281,7 +278,6 @@ function popType(toks) {
 function tabbed(objs) {
     if (objs === '') return '';		//TODO this should never be happening
     if (!Array.isArray(objs)) return '   ' + objs;		//TODO objs should always be an array
-    let a = objs.map(s => s.toString());		//TODO remove
     return '    ' + objs.map(s => s.toString()).join('').replace(/\n/g, '\n    ').slice(0, -4);
 }
 
@@ -333,8 +329,7 @@ class Switch {
     constructor(x, cases) {
         Object.assign(this, {x, cases});
     }
-    toString() {	//TODO remove
-        let a = this.cases.map(c => c.toString());
+    toString() {
         return `match ${this.x.trim()}:\n${tabbed(this.cases.map(c => c.toString()).join(''))}`
     }
 }
@@ -513,7 +508,7 @@ function update(){
 
 
 
-/* module.exports = {
+/* module.exports = {       //this is just for testing
     convert: function(str) {
         return parse(lex(str)).map(x => x.toString()).join('').replace(/\n    \n/g, '\n');		//TODO where are new lines coming from
     }	
