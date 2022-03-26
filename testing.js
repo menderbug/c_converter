@@ -7,14 +7,14 @@ let c_code = '#include <stdio.h>\nint main() {\n   // printf() displays the stri
 // console.log(c.convert(c_code));
 
 fs.readdir(folder, (err, files) => {
-	if (err) console.error('nope', err);
-	files.filter(f => f.endsWith('.c')).slice(0, 3).forEach((fname) => {
-		fs.readFile(folder + fname, 'utf-8', (err, data) => {
-			if (err) console.error('nope', err);
-			console.log(`----------------------------------------------------------------------------------\nC:\n${data}\nPYTHON:\n`)
-			console.log(`${c.convert(data)}\n----------------------------------------------------------------------------------`);
-		})
-	});
+    if (err) console.error('nope', err);
+    files.filter(f => f.endsWith('.c')).slice(0, 3).forEach((fname) => {
+        fs.readFile(folder + fname, 'utf-8', (err, data) => {
+            if (err) console.error('nope', err);
+            console.log(`----------------------------------------------------------------------------------\nC:\n${data}\nPYTHON:\n`)
+            console.log(`${c.convert(data)}\n----------------------------------------------------------------------------------`);
+        })
+    });
 });
 
 //TODO test 8: multi line comments
