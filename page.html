@@ -1,26 +1,58 @@
 <!DOCTYPE html>
-<html>  
+<html>
 
-<head>  
-  <script type = "text/javascript" src="c-converter.js"></script>  
+<head>
+  <style>
+    h1 {
+      font-weight: normal;
+    }
 
-    <script type="text/javascript">
-      window.onerror = function(message, url, lineNumber) {  
-        // code to execute on an error  
-        return true; // prevents browser error messages  
-      };
-  </script> 
+    body {
+      background-color: lightblue;
+    }
 
-</head>  
+    * {
+      font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+      text-align: center;
+    }
 
-<body>  
+    .first{
+      text-align: left;
+      text-indent: -39%;
+    }
 
-<textarea id="input" name="input" rows=20" cols="100">
+  </style>
+
+
+  <script type="text/javascript" src="c-converter.js"></script>
+
+  <script type="text/javascript">
+    window.onerror = function (message, url, lineNumber) {
+      // code to execute on an error  
+      return true; // prevents browser error messages  
+    };
+  </script>
+
+</head>
+
+<body>
+  <h1>David's C to Python Converter</h1>
+
+  <div class="first"> 
+    <br>
+    <p> Please type in your C code here: </p>   </div>
+    <textarea id="input" name="input" rows=18" cols="100">
+    </textarea>
+
+<br>
+<br>
+  <div class="first"> 
+  <p> Here is the Python equivalent: </p> </div>
+  <textarea readonly id="output" name="output" rows=18" cols="100">
 </textarea>
 
-<textarea readonly id="output" name="output" rows=20" cols="100">
-</textarea>
 
-</body>  
 
-</html>  
+</body>
+
+</html>
