@@ -30,22 +30,22 @@ function parse(toks) {
 function parseStmt(toks) {
     let t = toks.shift();
     switch(t) {
-        case 'if': 			return parseIf(toks);
-        case 'else':		return parseElse(toks);
-        case 'switch':		return parseSwitch(toks);
-        case 'while':		return parseWhile(toks);
-        case 'do': 			return parseDo(toks);
-        case 'for':			return parseFor(toks);
-        case '{':			toks.unshift(t);
+        case 'if':          return parseIf(toks);
+        case 'else':        return parseElse(toks);
+        case 'switch':      return parseSwitch(toks);
+        case 'while':       return parseWhile(toks);
+        case 'do':          return parseDo(toks);
+        case 'for':         return parseFor(toks);
+        case '{':           toks.unshift(t);
                             return parseBlock(matchBrackets(toks, '{'));
-        case ';': 			return '';
-        //case 'goto'		TODO somehow (this can be done by enclosing the entire program in a while loop with case/switch which would be really funny)
-        case 'break':		return parseBreak(toks);
-        case 'continue':	return parseContinue(toks);
-        case 'return':		return parseReturn(toks);
-        case 'typedef':		return parseTypedef(toks);
-        case 'struct':		return parseStruct(toks);
-        default:			toks.unshift(t);
+        case ';':           return '';
+        //case 'goto'       TODO somehow (this can be done by enclosing the entire program in a while loop with case/switch which would be really funny)
+        case 'break':       return parseBreak(toks);
+        case 'continue':    return parseContinue(toks);
+        case 'return':      return parseReturn(toks);
+        case 'typedef':     return parseTypedef(toks);
+        case 'struct':      return parseStruct(toks);
+        default:            toks.unshift(t);
                             return parseEtc(toks);
     }		
 }
