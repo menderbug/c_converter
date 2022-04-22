@@ -21,11 +21,8 @@ function parse(toks) {
     while (toks.length > 0)
         if (toks[0] === '#') {		//assuming no directives are used except include
             toks.splice(0, 2)		//removes #include
-            matchBrackets(toks, '<');	//these two should effectively clear out the entire include
-            matchBrackets(toks, '"');
-        } else if (isComment(toks[0]))
-            globals.push(outStmt(toks));
-        else
+            matchBrackets(toks, '<');
+        } else
             globals.push(outStmt(toks));
     return globals;
 }
@@ -41,8 +38,8 @@ function parseStmt(toks) {
         case 'for':			return parseFor(toks);
         case '{':			toks.unshift(t);
                             return parseBlock(matchBrackets(toks, '{'));
-        case ';': 			break;
-        //case 'goto'		TODO somehow
+        case ';': 			return '';
+        //case 'goto'		TODO somehow (this can be done by enclosing the entire program in a while loop with case/switch which would be really funny)
         case 'break':		return parseBreak(toks);
         case 'continue':	return parseContinue(toks);
         case 'return':		return parseReturn(toks);
@@ -106,9 +103,7 @@ function parseDo(toks) {
 
 function parseFor(toks) {
     let header = matchBrackets(toks, '(');
-    if (header.filter(x => x === ';').length !== 2)
-        throw 'insufficient number of arguments in for header';
-    return new For(header.outStmt(), header.outStmt(), header.outStmt(), outStmt(toks));	//if someone tries to put curly braces in a for header i don't know what will happen
+    return new For(outStmt(header), outStmt(header), outStmt([...header, ';']), outStmt(toks));	//if someone tries to put curly braces in a for header i don't know what will happen
 }
 
 function parseBlock(toks) {
@@ -154,31 +149,32 @@ function parseEtc(toks) {
         return parseType(toks);
     else if (/^[A-Za-z_]\w*/.test(toks[0]))
         return parseWord(toks);	
-    else if (isComment(toks))
-        return toks;
+    else if (isComment(toks[0]))
+        return toks[0];
     else
-        throw 'error here';
+        return parseExpr(toks);
 }
 
 function parseType(toks) {
-    let name = toks.shift();
-    if (toks[0] === ('('))
-        return new Def(name, matchBrackets(toks, '(').filter((x, i) => x % 3 === 1), outStmt(toks));		//note: this doesnt parse args and allows bracketless function definitions
-    else if (toks[0] === ('=')) {
-        toks.unshift(name)
+    console.log(toks);
+    if (toks.length === 0)
+        return '';
+    else if (toks[1] === ('('))
+        return new Def(toks.shift(), matchBrackets(toks, '(').filter((x, i) => x % 3 === 1), outStmt(toks));		//note: this doesnt parse args and allows bracketless function definitions
+    else if (toks[1] === ('='))
         return parseAssign(toks);
-    } else
+    else if (toks.indexOf('=', 2) !== -1)
+        return parseWord(toks.slice(2));
+    else
         return '';
 }
 
 function parseWord(toks) {
-    let name = toks.shift();
-    if (toks[0] === ('('))
-        return new Call(name, matchBrackets(toks, '(').join('').split(','));
-    else if (toks[0] === ('=')) {
-        toks.unshift(name)
+    if (toks[1] === ('('))
+        return new Call(toks.shift(), matchBrackets(toks, '(').join('').split(','));
+    else if (toks[1] === ('='))
         return parseAssign(toks);
-    } else 
+    else 
         return parseExpr(toks);
 }
 
@@ -199,6 +195,7 @@ function parseExpr(toks) {
         return toks;		//TODO should not be necessary, should be single element array
     let arr = [];
     let t;
+
     while (toks.length > 0)
         arr.push((t = popOp(toks)) !== undefined ? t : toks.shift());
 
@@ -211,16 +208,15 @@ function parseExpr(toks) {
     //the below loop has to be the most brittle thing ive ever written
     for (let i = 0; i < arr.length; i++) {
         let re;
-
         //unary + or - handling
-        if (!!(re = arr[i].match(/(\+|-)/)) && cOps.includes(arr[i - 1])) {	//instead of index out of bounds, returns undefined
+        if (!!(re = arr[i].match(/^(\+|-)$/)) && cOps.includes(arr[i - 1])) {	//instead of index out of bounds, returns undefined
             arr.splice(i, 1);
             if (re[1] === '-')
                 arr[i] = '-' + arr[i];
             i--;
         }
 
-        //prefix/postfix increment/decrement handling
+        //prefix/postfix increment/decrement handling       //TODO prefix handling
         if (!!(re = arr[i].match(/(\+|-){2}/))) {
             if (i === 0 || cOps.includes(arr[i - 1])) {
                 arr.splice(i, 2, '(', '(', arr[i + 1], arr[i], ')', '-', '1', ')');
@@ -231,8 +227,8 @@ function parseExpr(toks) {
 
         //mixed assignment operator handling
         if (cAssOps.includes(arr[i]) && i != 1) {
-            let name = arr.splice(i - 1, 1);
-            arr[i] = name + ' := ' + name + ' ' + arr[i].slice(0, -1);
+            let name = arr.splice(i - 1, 1);            //TODO chaining fails
+            arr[i] = name + ' := ' + name + ' ' + arr[i - 1].slice(0, -1);
             i--;
         }
     }
@@ -248,8 +244,9 @@ function parseExpr(toks) {
 
 function popStmt(toks) {
     const hacky = [...toks, '{', ';']
-    let i = Math.min(hacky.indexOf(';'), hacky.indexOf('{'))
-    if (hacky.indexOf(';') < hacky.indexOf('{'))
+    let start = toks[0] === 'for' ? hacky.indexOf(')') : 0;
+    let i = Math.min(hacky.indexOf(';', start), hacky.indexOf('{', start));
+    if (hacky.indexOf(';', start) < hacky.indexOf('{', start))
         return toks.splice(0, i + 1);
     else
         return toks.splice(0, i).concat(['{', ...matchBrackets(toks, '{'), '}']);
@@ -278,7 +275,7 @@ function popType(toks) {
 function tabbed(objs) {
     if (objs === '') return '';		//TODO this should never be happening
     if (!Array.isArray(objs)) return '   ' + objs;		//TODO objs should always be an array
-    return '    ' + objs.map(s => s.toString()).join('').replace(/\n/g, '\n    ').slice(0, -4);
+    return '    ' + objs.map(s => s.toString()).join('').replace(/\n/g, '\n    ');
 }
 
 function isComment(str) { return str.startsWith('//') || str.startsWith('/*')}
@@ -319,9 +316,9 @@ class Else {
     }
     toString() {
         if (this.cond)
-            return `elif:(${this.cond})\n${tabbed(this.stmt)}\n`;
+            return `elif ${this.cond}:\n${tabbed(this.stmt)}\n`;
         else
-            return `else:\n${tabbed(this.stmt)}\n`;
+            return `else: \n${tabbed(this.stmt)}\n`;
     }
 }
 
@@ -371,7 +368,7 @@ class For {
         Object.assign(this, {init, cond, iter, stmt});
     }
     toString() {
-        return `THIS ONE IS ACTUALLY HARD\n`;
+        return `${this.init}while ${this.cond}:\n${tabbed([this.stmt , this.iter])}\n`;
     }
 }
 
@@ -451,7 +448,7 @@ class Comment {
         if (this.txt.startsWith('//'))
             return `# ${this.txt.slice(this.txt.search(/[^\s\/]/))}\n`;
         else {
-            return '#' + this.txt.slice(2, -2).replace(/\n\s*\*/g, '\n#');
+            return '# ' + this.txt.slice(2, -2).replace(/\n\s*\*?\/?/g, '\n# ');
         }	
     }
 }
