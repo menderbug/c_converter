@@ -419,9 +419,8 @@ class Call {
                     this.args[0] = this.args[0].replace(re, `{${this.args[i]}}`);
                 return `print(${this.args.length > 1 ? 'f' : ''}${this.args[0]})\n`;
             case 'scanf':
-                let out = ''
-                for (let i = 1; i < this.args.length; i++)
-                    out += `${this.args[i].slice(1)} = input()\n`
+                let out = this.args.slice(1).map(x => x.slice(1)).join(', ');
+                out += ` = input()${this.args.length > 2 ? '.split()' : ''}\n`;
                 return out;
             default:
                 return `${this.name}(${this.args.join()})\n`;
