@@ -1,0 +1,12 @@
+tasks
+
+-----
+TODO
+-----
+fix assignments
+merge print with input
+
+-----
+DONE
+-----
+merge multiple input statments
