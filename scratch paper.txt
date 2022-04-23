@@ -1,10 +1,12 @@
 tasks
 
+add todo stuff here, and claim it if youre working so we dont overlap and have conflicts
+
 -----
 TODO
 -----
-fix assignments
-merge print with input
+fix assignments				(david)
+merge print with input		(david)
 
 -----
 DONE
