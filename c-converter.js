@@ -156,7 +156,7 @@ function parseEtc(toks) {
 }
 
 function parseType(toks) {
-    console.log(toks);
+    // console.log(toks);
     if (toks.length === 0)
         return '';
     else if (toks[1] === ('('))
@@ -482,32 +482,32 @@ const pyOps = {
 
 const ignorable = [] //TODO this one is ignoreable functions like malloc
 
-function convert() {
-    return parse(lex(document.getElementById('input').value)).map(x => x.toString()).join('').replace(/\n    \n/g, '\n').replace(/;/g, '');
-}	
+// if testing, comment out convert through update
+// function convert() {
+//     return parse(lex(document.getElementById('input').value)).map(x => x.toString()).join('').replace(/\n    \n/g, '\n').replace(/;/g, '');
+// }	
 
-var input = document.getElementById('input');
-addEventListener('input', onChange);
+// var input = document.getElementById('input');
+// addEventListener('input', onChange);
 
-function onChange() {
-    let duration = 1000;
-    let timer;
-    clearTimeout(timer);
-    timer = setTimeout(() => {
-        update();
-    }, duration);
-}
+// function onChange() {
+//     let duration = 1000;
+//     let timer;
+//     clearTimeout(timer);
+//     timer = setTimeout(() => {
+//         update();
+//     }, duration);
+// }
 
-function update(){
-    document.getElementById('output').value = convert();
-}	
-
-
+// function update(){
+//     document.getElementById('output').value = convert();
+// }	
 
 
-/* module.exports = {       //this is just for testing
+
+// uncomment if you're testing
+module.exports = {       
     convert: function(str) {
         return parse(lex(str)).map(x => x.toString()).join('').replace(/\n    \n/g, '\n');		//TODO where are new lines coming from
     }	
 };
-*/

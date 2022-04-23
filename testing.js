@@ -4,11 +4,12 @@ var c = require('./c-converter');
 const folder = 'tests/'
 let c_code = '#include <stdio.h>\nint main() {\n   // printf() displays the string inside quotation\n   printf("Hello, World!");\n   return 0;\n}';
 
-// console.log(c.convert(c_code));
+
+//console.log(c.convert(c_code));
 
 fs.readdir(folder, (err, files) => {
 	if (err) console.error('nope', err);
-	files.filter(f => f.endsWith('.c')).slice(0, 3).forEach((fname) => {
+	files.filter(f => f.endsWith('.c')).slice(0, 7).forEach((fname) => {
 		fs.readFile(folder + fname, 'utf-8', (err, data) => {
 			if (err) console.error('nope', err);
 			console.log(`----------------------------------------------------------------------------------\nC:\n${data}\nPYTHON:\n`)
