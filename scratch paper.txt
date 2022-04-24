@@ -5,10 +5,16 @@ add todo stuff here, and claim it if youre working so we dont overlap and have c
 -----
 TODO
 -----
-fix assignments				(david)
-merge print with input		(david)
+fix assignments cutting off if function calls were assigned as a value				(david)
+merge print with input																(david)
 
 -----
 DONE
 -----
 merge multiple input statments
+fix semicolons after return statments
+allow for function calls to be expressions
+fix extra space incorrectly appearing after assignment statements
+fix match/case incorrectly only tabbing before the first case
+
+

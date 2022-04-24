@@ -46,6 +46,7 @@ function parseStmt(toks) {
         case 'typedef':     return parseTypedef(toks);
         case 'struct':      return parseStruct(toks);
         default:            toks.unshift(t);
+
                             return parseEtc(toks);
     }		
 }
@@ -160,8 +161,8 @@ function parseType(toks) {
     if (toks.length === 0)
         return '';
     else if (toks[1] === ('('))
-        return new Def(toks.shift(), matchBrackets(toks, '(').filter((x, i) => x % 3 === 1), outStmt(toks));		//note: this doesnt parse args and allows bracketless function definitions
-    else if (toks[1] === ('='))
+        return new Def(toks.shift(), matchBrackets(toks, '(').filter((x, i) => i % 3 === 1), outStmt(toks));		//note: this doesnt parse args and allows bracketless function definitions
+    else if (toks[1] === ('='))                                                             //TODO this should be i % 3 and not x % 3 right?
         return parseAssign(toks);
     else if (toks.indexOf('=', 2) !== -1)
         return parseWord(toks.slice(2));
@@ -170,9 +171,9 @@ function parseType(toks) {
 }
 
 function parseWord(toks) {
-    if (toks[1] === ('('))
-        return new Call(toks.shift(), matchBrackets(toks, '(').join('').split(','));
-    else if (toks[1] === ('='))
+    if (toks[1] === '(')
+        return functionCall(toks.shift(), matchBrackets(toks, '(').join('').split(','));    // TODO does this work for func(func(a, b), b) comma detection?
+    else if (toks[1] === '=')
         return parseAssign(toks);
     else 
         return parseExpr(toks);
@@ -181,11 +182,15 @@ function parseWord(toks) {
 function parseAssign(toks) {
     let dict = {};
     toks[toks.length - 1] = ',';		//preps the loop operation (brittle)
-    while (toks.length > 0) {
-        let single = toks.splice(0, toks.indexOf(',') + 1).slice(0, -1);
-        if (single.includes('='))
-            dict[single[0]] = parseExpr(single.slice(2));
+    let commas = [...Array(toks.length).keys()].filter(
+        i => toks[i] === ',' && toks.slice(0, i).count('(') === toks.slice(0, i).count(')')
+    );
+    for (let index of commas) {
+        let arg = toks.splice(0, index + 1).slice(0, -1);
+        if (arg.includes('='))
+            dict[arg[0]] = parseExpr(arg.slice(2));
     }
+
     return new Assign(dict);
 }
 
@@ -195,6 +200,14 @@ function parseExpr(toks) {
         return toks;		//TODO should not be necessary, should be single element array
     let arr = [];
     let t;
+
+    //kind of crusty but it handles semicolons sneaking in there
+    if (toks[toks.length - 1] === ';')
+        toks.pop();
+
+    //handles function call as expression
+    if (/^[A-Za-z_]\w*/.test(toks[0]) && toks.includes('(') && toks.includes(')') && toks[1] === '(')
+        return functionCall(toks.shift(), matchBrackets(toks, '(').join('').split(','));        
 
     while (toks.length > 0)
         arr.push((t = popOp(toks)) !== undefined ? t : toks.shift());
@@ -242,6 +255,14 @@ function parseExpr(toks) {
     return arr.join('');		//note: parseExpr returns a string instead of an object (maybe use a Expr wrapper?)
 }
 
+function functionCall(name, args) {
+    switch (name) {
+        case 'printf':  return new Print(args);
+        case 'scanf':   return new Input(args);
+        default:        return new Call(name, args);
+    }
+}
+
 function popStmt(toks) {
     const hacky = [...toks, '{', ';']
     let start = toks[0] === 'for' ? hacky.indexOf(')') : 0;
@@ -266,16 +287,16 @@ function popOp(toks) {
 }
 
 function popType(toks) {
-    if (toks[0] == 'const') toks.shift();		//just removing any const
+    if (toks[0] === 'const') toks.shift();		//just removing any const
     for (let i = 4; i >= 1; i--)
         if (toks.length >= i && cTypes.includes(toks.slice(0, i).join(' ')))
             return toks.splice(0, i);
 }
 
 function tabbed(objs) {
-    if (objs === '') return '';		//TODO this should never be happening
-    if (!Array.isArray(objs)) return '   ' + objs;		//TODO objs should always be an array
-    return '    ' + objs.map(s => s.toString()).join('').replace(/\n/g, '\n    ');
+    if (!Array.isArray(objs)) 
+        return '    ' + objs;		//when objs is just a comment
+    return '    ' + objs.filter(x => x !== '').map(s => s.toString()).join('').replace(/\n/g, '\n    ');
 }
 
 function isComment(str) { return str.startsWith('//') || str.startsWith('/*')}
@@ -299,7 +320,6 @@ function matchBrackets(toks, bracket) {
     }
     throw 'Mismatched brackets';
 }
-
 
 class If {
     constructor(cond, stmt) {
@@ -327,7 +347,7 @@ class Switch {
         Object.assign(this, {x, cases});
     }
     toString() {
-        return `match ${this.x.trim()}:\n${tabbed(this.cases.map(c => c.toString()).join(''))}`
+        return `match ${this.x.trim()}:\n${tabbed(this.cases.map(c => c.toString()))}`
     }
 }
 
@@ -374,8 +394,8 @@ class For {
 
 class Goto {}	//TODO
 
-class Break { toString() { return 'break\n'; } }
-class Continue { toString() { return 'continue\n';} }
+class Break { toString() { return 'break'; } }
+class Continue { toString() { return 'continue';} }
 
 class Return {
     constructor(val) {
@@ -411,21 +431,31 @@ class Call {
         Object.assign(this, {name, args});
     }
     toString() {
-
-        switch (this.name) {
-            case 'printf':
-                const re = /%(-|\+| |#|\.[0-9]+|\.\*){0,6}[hlL]?[cdieEfgGosuxXp]/;
-                for (let i = 1; i < this.args.length; i++)
-                    this.args[0] = this.args[0].replace(re, `{${this.args[i]}}`);
-                return `print(${this.args.length > 1 ? 'f' : ''}${this.args[0]})\n`;
-            case 'scanf':
-                let out = this.args.slice(1).map(x => x.slice(1)).join(', ');
-                out += ` = input()${this.args.length > 2 ? '.split()' : ''}\n`;
-                return out;
-            default:
-                return `${this.name}(${this.args.join()})\n`;
-        }
+        return `${this.name}(${this.args.join()})`;     //not necessarily a line break
     }
+}
+
+class Print {
+    constructor(args) {
+        Object.assign(this, {args});
+    }
+    toString() {
+        const re = /%(-|\+| |#|\.[0-9]+|\.\*){0,6}[hlL]?[cdieEfgGosuxXp]/;
+        for (let i = 1; i < this.args.length; i++)
+            this.args[0] = this.args[0].replace(re, `{${this.args[i]}}`);
+        return `print(${this.args.length > 1 ? 'f' : ''}${this.args[0]})\n`;
+    }
+}
+
+class Input {
+    constructor(args) {
+        Object.assign(this, {args});
+    }
+    toString() {
+        let out = this.args.slice(1).map(x => x.slice(1)).join(', ');
+        out += ` = input()${this.args.length > 2 ? '.split()' : ''}\n`;
+        return out;
+    }  
 }
 
 class Assign {
@@ -433,9 +463,7 @@ class Assign {
         Object.assign(this, {dict});
     }
     toString() {
-        return Object.entries(this.dict).map(([k, v], _) => `${k} = ${v}\n`).join('');
-        //for (cost [name, val] of Object.entries(this.dict))
-    //		return `${name} = ${this.dict[name]}\n`;
+        return Object.entries(this.dict).map(([k, v], _) => `${k} = ${v}`).join('\n');
     }
 }
 
@@ -501,6 +529,18 @@ const ignorable = [] //TODO this one is ignoreable functions like malloc
 // function update(){
 //     document.getElementById('output').value = convert();
 // }	
+
+Object.defineProperties(Array.prototype, {
+    count: {
+        value: function(query) {
+            var count = 0;
+            for(let i = 0; i < this.length; i++)
+                if (this[i] == query)
+                    count++;
+            return count;
+        }
+    }
+});
 
 
 
