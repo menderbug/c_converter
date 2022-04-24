@@ -294,9 +294,8 @@ function popType(toks) {
 }
 
 function tabbed(objs) {
-    if (!Array.isArray(objs)) 
-        return '    ' + objs;		//when objs is just a comment
-    return '    ' + objs.filter(x => x !== '').map(s => s.toString()).join('').replace(/\n/g, '\n    ');
+    let tabbedStr = '    ' + objs.filter(x => x !== '').map(s => s.toString()).join('').replace(/\n/g, '\n    ');
+    return tabbedStr.endsWith('    ') ? tabbedStr.slice(0, -4) : tabbedStr;     //handling end tab case (crusty)
 }
 
 function isComment(str) { return str.startsWith('//') || str.startsWith('/*')}
