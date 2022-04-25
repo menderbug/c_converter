@@ -28,21 +28,24 @@ function parse(toks) {
 }
 
 function optimize(tree) {
-    return mergeInput(tree);
+    mergeInput(tree);
 }
 
 function mergeInput(tree) {
-    if (typeof(tree) === 'object')
-        Object.values(tree).forEach(x => mergeInput(x));
-    else if (Array.isArray(tree)) {
-        for (let i = 0; i < tree.length - 1; i++) {
-            if (tree[i] instanceof Print && tree[i + 1] instanceof Input) {
-                tree[i + 1].setText(tree.shift(i, 1))
+    if (Array.isArray(tree)) {
+        for (let i = 0; i < tree.length; i++) {
+            if (tree[i] instanceof Print && i !== tree.length - 1 && tree[i + 1] instanceof Input) {
+                tree[i + 1].setText(tree.splice(i, 1)[0].text)
                 i--;
-            }
+            } else
+                mergeInput(tree[i]);
+
+            // need to recursively call on other statements
+            // return or side effects? probably side effects
         }
-    }   //third case should just be tree is a string
-    return tree;
+    } else if (typeof(tree) === 'object')
+        Object.values(tree).forEach(x => mergeInput(x));   
+    //third case should just be tree is a string
 }
 
 function parseStmt(toks) {
@@ -570,6 +573,8 @@ Object.defineProperties(Array.prototype, {
 // uncomment if you're testing
 module.exports = {       
     convert: function(str) {
-        return optimize(parse(lex(str))).map(x => x.toString()).join('').replace(/\n    \n/g, '\n');		//TODO where are new lines coming from
+        let tree = parse(lex(str));
+        optimize(tree);
+        return tree.map(x => x.toString()).join('').replace(/\n    \n/g, '\n');		//TODO where are new lines coming from
     }	
 };

@@ -4,7 +4,6 @@ add todo stuff here, and claim it if youre working so we dont overlap and have c
 
 # TODO
 
-merge print with input									david
 implement arrays                                        david
 implement structs
 fix + operator not appearing
@@ -22,5 +21,6 @@ fix extra space incorrectly appearing after assignment statements
 fix match/case incorrectly only tabbing before the first case
 fix extra tab after block 
 fix assignments cutting off if function calls were assigned as a value
+merge print with input
 
 
