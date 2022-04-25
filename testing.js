@@ -10,7 +10,7 @@ let c_code = 'a = b(c, d);';
 
 fs.readdir(folder, (err, files) => {
 	if (err) console.error('nope', err);
-	files.filter(f => f.endsWith('.c')).slice(1, 2).forEach((fname) => {
+	files.filter(f => f.endsWith('.c')).slice(6, 7).forEach((fname) => {
 		fs.readFile(folder + fname, 'utf-8', (err, data) => {
 			if (err) console.error('nope', err);
 			console.log(`----------------------------------------------------------------------------------\nC:\n${data}\nPYTHON:\n`)

@@ -2,15 +2,19 @@ tasks
 
 add todo stuff here, and claim it if youre working so we dont overlap and have conflicts
 
------
-TODO
------
+# TODO
+
 merge print with input									david
 implement arrays                                        david
+implement structs
+fix + operator not appearing
+fix increment/decrement operator
+stretch goal: pointers?
+add more c library functions (only print and scan rn)
 
------
-DONE
------
+
+# Done
+
 merge multiple input statments
 fix semicolons after return statments
 allow for function calls to be expressions

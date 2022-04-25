@@ -27,6 +27,24 @@ function parse(toks) {
     return globals;
 }
 
+function optimize(tree) {
+    return mergeInput(tree);
+}
+
+function mergeInput(tree) {
+    if (typeof(tree) === 'object')
+        Object.values(tree).forEach(x => mergeInput(x));
+    else if (Array.isArray(tree)) {
+        for (let i = 0; i < tree.length - 1; i++) {
+            if (tree[i] instanceof Print && tree[i + 1] instanceof Input) {
+                tree[i + 1].setText(tree.shift(i, 1))
+                i--;
+            }
+        }
+    }   //third case should just be tree is a string
+    return tree;
+}
+
 function parseStmt(toks) {
     let t = toks.shift();
     switch(t) {
@@ -185,8 +203,11 @@ function parseAssign(toks) {
     let commas = [...Array(toks.length).keys()].filter(
         i => toks[i] === ',' && toks.slice(0, i).count('(') === toks.slice(0, i).count(')')
     );
-    for (let index of commas) {
-        let arg = toks.splice(0, index + 1).slice(0, -1);
+
+    // LMAO have fun reading this one
+    // ok it basically just zips so that (4, 7, 11) turns into ((0, 4), (5, 7), (8, 11))    
+    for (let pair of commas.map((x, i) => [i == 0 ? 0 : commas[i - 1] + 1, x])) {
+        let arg = toks.slice(pair[0], pair[1]);
         if (arg.includes('='))
             dict[arg[0]] = parseExpr(arg.slice(2));
     }
@@ -203,7 +224,7 @@ function parseExpr(toks) {
 
     //kind of crusty but it handles semicolons sneaking in there
     if (toks[toks.length - 1] === ';')
-        toks.pop();
+        return parseExpr(toks.pop()) + '\n';
 
     //handles function call as expression
     if (/^[A-Za-z_]\w*/.test(toks[0]) && toks.includes('(') && toks.includes(')') && toks[1] === '(')
@@ -294,6 +315,7 @@ function popType(toks) {
 }
 
 function tabbed(objs) {
+    if (!Array.isArray(objs)) return tabbed([objs]);    // lmao
     let tabbedStr = '    ' + objs.filter(x => x !== '').map(s => s.toString()).join('').replace(/\n/g, '\n    ');
     return tabbedStr.endsWith('    ') ? tabbedStr.slice(0, -4) : tabbedStr;     //handling end tab case (crusty)
 }
@@ -325,7 +347,7 @@ class If {
         Object.assign(this, {cond, stmt});
     }
     toString() {
-        return `if ${this.cond}:\n${tabbed(this.stmt)}\n`;
+        return `if ${this.cond}:\n${tabbed(this.stmt)}`;
     }
 }
 
@@ -335,9 +357,9 @@ class Else {
     }
     toString() {
         if (this.cond)
-            return `elif ${this.cond}:\n${tabbed(this.stmt)}\n`;
+            return `elif ${this.cond}:\n${tabbed(this.stmt)}`;
         else
-            return `else: \n${tabbed(this.stmt)}\n`;
+            return `else: \n${tabbed(this.stmt)}`;
     }
 }
 
@@ -430,29 +452,31 @@ class Call {
         Object.assign(this, {name, args});
     }
     toString() {
-        return `${this.name}(${this.args.join()})`;     //not necessarily a line break
+        return `${this.name}(${this.args.join(', ')})`;     //not necessarily a line break
     }
 }
 
 class Print {
     constructor(args) {
-        Object.assign(this, {args});
-    }
-    toString() {
         const re = /%(-|\+| |#|\.[0-9]+|\.\*){0,6}[hlL]?[cdieEfgGosuxXp]/;
-        for (let i = 1; i < this.args.length; i++)
-            this.args[0] = this.args[0].replace(re, `{${this.args[i]}}`);
-        return `print(${this.args.length > 1 ? 'f' : ''}${this.args[0]})\n`;
+        for (let i = 1; i < args.length; i++)
+            args[0] = args[0].replace(re, `{${args[i]}}`);
+        this.text = args.length > 1 ? 'f' : '' + args[0];
     }
+    toString() { return `print(${this.text})\n`; }
 }
 
 class Input {
     constructor(args) {
         Object.assign(this, {args});
     }
+
+    setText(str) {this.text = str;}
+
     toString() {
+        let text = this.hasOwnProperty('text') ? this.text : '';
         let out = this.args.slice(1).map(x => x.slice(1)).join(', ');
-        out += ` = input()${this.args.length > 2 ? '.split()' : ''}\n`;
+        out += ` = input(${text})${this.args.length > 2 ? '.split()' : ''}\n`;
         return out;
     }  
 }
@@ -462,7 +486,7 @@ class Assign {
         Object.assign(this, {dict});
     }
     toString() {
-        return Object.entries(this.dict).map(([k, v], _) => `${k} = ${v}`).join('\n');
+        return Object.entries(this.dict).map(([k, v], _) => `${k} = ${v}`).join(', ') + '\n';
     }
 }
 
@@ -546,6 +570,6 @@ Object.defineProperties(Array.prototype, {
 // uncomment if you're testing
 module.exports = {       
     convert: function(str) {
-        return parse(lex(str)).map(x => x.toString()).join('').replace(/\n    \n/g, '\n');		//TODO where are new lines coming from
+        return optimize(parse(lex(str))).map(x => x.toString()).join('').replace(/\n    \n/g, '\n');		//TODO where are new lines coming from
     }	
 };
