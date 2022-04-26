@@ -294,6 +294,23 @@ function functionCall(name, args) {
     switch (name) {
         case 'printf':  return new Print(args);
         case 'scanf':   return new Input(args);
+        case 'strlen':  return `len(${args[0]})`;
+        case 'strlwr':  return args[0] + '.lower()';
+        case 'strupr':  return args[0] + '.upper()';
+        case 'strcat':  return `${args[0]} + ${args[1]}`;
+        case 'strncat': return `${args[0]} + ${args[1]}[:${args[2]}]`;
+        case 'strcpy':  return `${args[0]} = ${args[1]}`;
+        case 'strncpy': return `${args[0]} = ${args[1]}[:${args[2]}] + ${args[0]}[${args[2]}:]`;
+        // TODO strcmp, strncmp, strcmpi, stricmp, strnicmp
+        case 'strdup':  return args[0];
+        case 'strndup': return `${args[0]}[:${args[1]}]`;
+        case 'strchr':
+        case 'strstr':  return `${args[0]}.find(${args[1]})`;
+        case 'strrchr': return `${args[0]}.rfind(${args[1]})`;
+        case 'strset':  return `${args[0]} = ${args[1]} * len(${args[0]})`;
+        case 'strnset': return `${args[0]} = (${args[1]} * ${args[2]}) + ${args[0]}[:${args[2]}]`;
+        case 'strrev':  return `${args[0]}[::-1]`;
+
         default:        return new Call(name, args);
     }
 }
