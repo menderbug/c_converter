@@ -196,6 +196,8 @@ function parseWord(toks) {
         return functionCall(toks.shift(), matchBrackets(toks, '(').join('').split(','));    // TODO does this work for func(func(a, b), b) comma detection?
     else if (toks[1] === '=')
         return parseAssign(toks);
+    else if (toks[1] === ',')
+        return parseWord(toks.slice(2));
     else 
         return parseExpr(toks);
 }
@@ -211,8 +213,12 @@ function parseAssign(toks) {
     // ok it basically just zips so that (4, 7, 11) turns into ((0, 4), (5, 7), (8, 11))    
     for (let pair of commas.map((x, i) => [i == 0 ? 0 : commas[i - 1] + 1, x])) {
         let arg = toks.slice(pair[0], pair[1]);
-        if (arg.includes('='))
-            dict[arg[0]] = parseExpr(arg.slice(2));
+        if (arg.includes('=')) {
+            if (arg[3] == '{' && arg.endsWith('}'))
+                dict[arg[0]] = parseArray(arg.slice(2));
+            else
+                dict[arg[0]] = parseExpr(arg.slice(2));
+        }
     }
 
     return new Assign(dict);
@@ -227,7 +233,7 @@ function parseExpr(toks) {
 
     //kind of crusty but it handles semicolons sneaking in there
     if (toks[toks.length - 1] === ';')
-        return parseExpr(toks.pop()) + '\n';
+        return parseExpr(toks.slice(0, -1)) + '\n';
 
     //handles function call as expression
     if (/^[A-Za-z_]\w*/.test(toks[0]) && toks.includes('(') && toks.includes(')') && toks[1] === '(')
@@ -246,11 +252,10 @@ function parseExpr(toks) {
     for (let i = 0; i < arr.length; i++) {
         let re;
         //unary + or - handling
-        if (!!(re = arr[i].match(/^(\+|-)$/)) && cOps.includes(arr[i - 1])) {	//instead of index out of bounds, returns undefined
+        if (!!(re = arr[i].match(/^(\+|-|~)$/)) && (i === 0 || cOps.includes(arr[i - 1]))) {	//instead of index out of bounds, returns undefined
             arr.splice(i, 1);
-            if (re[1] === '-')
-                arr[i] = '-' + arr[i];
-            i--;
+            if (re[1] !== '+')      //ignore unary +
+                arr[i] = re[1] + arr[i];
         }
 
         //prefix/postfix increment/decrement handling       //TODO prefix handling
@@ -279,7 +284,13 @@ function parseExpr(toks) {
     return arr.join('');		//note: parseExpr returns a string instead of an object (maybe use a Expr wrapper?)
 }
 
+// currently returns a string object because it cant really have other stuff in it
+function parseArray(toks) {
+
+}
+
 function functionCall(name, args) {
+    if (name in ignorable) return '';
     switch (name) {
         case 'printf':  return new Print(args);
         case 'scanf':   return new Input(args);
@@ -410,6 +421,8 @@ class Do {
 class For {
     constructor(init, cond, iter, stmt) {
         Object.assign(this, {init, cond, iter, stmt});
+        if (typeof(this.cond) === 'string') this.cond = this.cond.trim();
+        if (typeof(this.iter) === 'string') this.iter = this.iter.trim();
     }
     toString() {
         return `${this.init}while ${this.cond}:\n${tabbed([this.stmt , this.iter])}\n`;
@@ -464,7 +477,7 @@ class Print {
         const re = /%(-|\+| |#|\.[0-9]+|\.\*){0,6}[hlL]?[cdieEfgGosuxXp]/;
         for (let i = 1; i < args.length; i++)
             args[0] = args[0].replace(re, `{${args[i]}}`);
-        this.text = args.length > 1 ? 'f' : '' + args[0];
+        this.text = (args.length > 1 ? 'f' : '') + args[0];
     }
     toString() { return `print(${this.text})\n`; }
 }
@@ -533,7 +546,7 @@ const pyOps = {
     ' / ':' // ', ' ! ':' not ', ' && ':' and ', ' || ':' or ', ' ; ':'\n' 
 };
 
-const ignorable = [] //TODO this one is ignoreable functions like malloc
+const ignorable = ['malloc', 'calloc', 'free', 'realloc']
 
 // if testing, comment out convert through update
 // function convert() {

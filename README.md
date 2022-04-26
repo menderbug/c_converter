@@ -4,7 +4,7 @@ add todo stuff here, and claim it if youre working so we dont overlap and have c
 
 # TODO
 
-implement arrays  
+implement arrays (in progress)  
 implement structs  
 fix + operator not appearing  
 fix increment/decrement operator  
@@ -14,13 +14,16 @@ add more c library functions (only print and scan rn)
 
 # Done
 
-merge multiple input statments  
-fix semicolons after return statments  
-allow for function calls to be expressions  
-fix extra space incorrectly appearing after assignment statements  
-fix match/case incorrectly only tabbing before the first case  
-fix extra tab after block  
-fix assignments cutting off if function calls were assigned as a value  
-merge print with input  
-
-
+merged multiple input statments  
+fixed semicolons after return statments  
+allowed for function calls to be expressions  
+fixed extra space incorrectly appearing after assignment statements  
+fixed match/case incorrectly only tabbing before the first case  
+fixed extra tab after block  
+fixed assignments cutting off if function calls were assigned as a value  
+merged print with input  
+fixed semicolons still appearing after return statements  
+trimmed spaces appearing in parsed for loops  
+fixed multiple declarations without assignment incorrectly parsing  
+fixed space incorrectly appearing between unary operators (e.g. ~ a)  
+added handling for memory-based functions that are obsolete in python (like malloc)  
