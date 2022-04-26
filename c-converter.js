@@ -166,10 +166,11 @@ function parseStruct(toks) {
     let name = toks.shift();		//TODO stretch goal
 }
 
+// parsing things that aren't the above structures
 function parseEtc(toks) {
     if (popType(toks) !== undefined)	//discarding the type
         return parseType(toks);
-    else if (/^[A-Za-z_]\w*/.test(toks[0]))
+    else if (/^[A-Za-z_]\w*(\[.*\])*$/.test(toks[0]))
         return parseWord(toks);	
     else if (isComment(toks[0]))
         return toks[0];
@@ -182,7 +183,7 @@ function parseType(toks) {
     if (toks.length === 0)
         return '';
     else if (toks[1] === ('('))
-        return new Def(toks.shift(), matchBrackets(toks, '(').filter((x, i) => i % 3 === 1), outStmt(toks));		//note: this doesnt parse args and allows bracketless function definitions
+        return new Def(toks.shift(), funcArgs(matchBrackets(toks, '(')), outStmt(toks));		//note: this doesnt parse args and allows bracketless function definitions
     else if (toks[1] === ('='))                                                             //TODO this should be i % 3 and not x % 3 right?
         return parseAssign(toks);
     else if (toks.indexOf('=', 2) !== -1)
@@ -207,6 +208,7 @@ function parseAssign(toks) {
     toks[toks.length - 1] = ',';		//preps the loop operation (brittle)
     let commas = [...Array(toks.length).keys()].filter(
         i => toks[i] === ',' && toks.slice(0, i).count('(') === toks.slice(0, i).count(')')
+                             && toks.slice(0, i).count('{') === toks.slice(0, i).count('}')
     );
 
     // LMAO have fun reading this one
@@ -245,7 +247,7 @@ function parseExpr(toks) {
     if (arr.includes('?') && arr.includes(':')) {
         let cond = arr.splice(0, arr.indexOf('?') + 1).slice(0, -1);
         let yes = arr.splice(0, arr.indexOf(':') + 1).slice(0, -1);
-        arr = [...parseExpr(yes), 'if', ...parseExpr(cond), 'else', ...parseExpr(arr)];
+        arr = [parseExpr(yes), ' if ', parseExpr(cond), ' else ', parseExpr(arr)];
     }
 
     //the below loop has to be the most brittle thing ive ever written
@@ -292,7 +294,8 @@ function parseArray(toks) {
 function functionCall(name, args) {
     if (name in ignorable) return '';
     switch (name) {
-        case 'printf':  return new Print(args);
+        case 'printf':
+        case 'putchar': return new Print(args);
         case 'scanf':   return new Input(args);
         case 'strlen':  return `len(${args[0]})`;
         case 'strlwr':  return args[0] + '.lower()';
@@ -310,7 +313,6 @@ function functionCall(name, args) {
         case 'strset':  return `${args[0]} = ${args[1]} * len(${args[0]})`;
         case 'strnset': return `${args[0]} = (${args[1]} * ${args[2]}) + ${args[0]}[:${args[2]}]`;
         case 'strrev':  return `${args[0]}[::-1]`;
-
         default:        return new Call(name, args);
     }
 }
@@ -339,10 +341,30 @@ function popOp(toks) {
 }
 
 function popType(toks) {
+    let type;
     if (toks[0] === 'const') toks.shift();		//just removing any const
     for (let i = 4; i >= 1; i--)
         if (toks.length >= i && cTypes.includes(toks.slice(0, i).join(' ')))
-            return toks.splice(0, i);
+            type = toks.splice(0, i).join(' ');
+    while (toks[0] === '*') type += toks.shift();      //removing pointer type
+    if (toks[0] === '[' && toks[1] === ']')
+        type += toks.splice(0, 2).join('');                   //removing array type
+    return type;
+}
+
+function funcArgs(toks) {
+    let args = [];
+    while (toks.length > 0) {
+        popType(toks);                  //remove type
+        if (toks.length === 0) break;   
+        if (toks[0] !== ',') 
+            args.push(toks.shift())     //store arg name
+        if (toks[0] === '[' && toks[1] ===']')
+            args[args.length - 1] += toks.splice(0, 2).join('');
+        if (toks.length === 0) break;
+        toks.shift();                   //remove comma
+    }
+    return args;
 }
 
 function tabbed(objs) {
@@ -456,7 +478,7 @@ class Return {
         Object.assign(this, {val});
     }	
     toString() {
-        return `return ${this.val}\n`;
+        return `return ${this.val}`;
     }
 }
 
@@ -476,7 +498,7 @@ class Def {
     }
     toString() {
         if (!this.stmt) return '';
-        return `func ${this.name} (${this.args.join()}):\n${tabbed(this.stmt)}`;
+        return `func ${this.name}(${this.args.join(', ')}):\n${tabbed(this.stmt)}`;
     }
 }
 
@@ -531,7 +553,7 @@ class Comment {
         if (this.txt.startsWith('//'))
             return `# ${this.txt.slice(this.txt.search(/[^\s\/]/))}\n`;
         else {
-            return '# ' + this.txt.slice(2, -2).replace(/\n\s*\*?\/?/g, '\n# ');
+            return '# ' + this.txt.slice(2).trim().replace(/\n\s*\*?/g, '\n# ').slice(0, -2) + '\n';
         }	
     }
 }
@@ -556,7 +578,7 @@ const cOps = [
     '|=', '>=', '<=', '==', '<<=', '>>=', '&&', '||', '++', '--', '!=', ',', '?', ':', '~', '(', ')'
 ];
 
-const cAssOps = ['=', '+=', '-=', '*=', '/=', '%=', '&=', '^=', '|=', '>=', '<=', '==', '<<=', '>>=']
+const cAssOps = ['=', '+=', '-=', '*=', '/=', '%=', '&=', '^=', '|=', '>=', '<=', '<<=', '>>=']
 
 //easily substituted C -> python operators
 const pyOps = {

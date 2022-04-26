@@ -9,7 +9,6 @@ implement structs
 fix + operator not appearing  
 fix increment/decrement operator  
 stretch goal: pointers?  
-add more c library functions (only print and scan rn)  
 
 
 # Done
@@ -27,3 +26,8 @@ trimmed spaces appearing in parsed for loops
 fixed multiple declarations without assignment incorrectly parsing  
 fixed space incorrectly appearing between unary operators (e.g. ~ a)  
 added handling for memory-based functions that are obsolete in python (like malloc)  
+improved detection for function defintiom headers
+added handling for array types
+fixed multi line comments
+fixed ternary expressions
+
