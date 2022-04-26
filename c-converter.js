@@ -1,5 +1,11 @@
 //I'm working off the GNU C Reference Manual
-//limited right now to a main function, no function definitions are possible
+
+// GO TO THE END OF THE CODE
+// for this to work in html, input, onChange(), and update() must be uncommented
+// for this to work in node, module.whatever anonymous function must be uncommmented
+// these are mutually exclusive
+
+
 
 //TODO preprocessor directives (include can disappear) (maybe just use normal if?)
 
@@ -604,21 +610,21 @@ function translate(str) {
 }	
 
 // if testing, comment all the code from here
-// var input = document.getElementById('input');
-// addEventListener('input', onChange);
+var input = document.getElementById('input');
+addEventListener('input', onChange);
 
-// function onChange() {
-//     let duration = 1000;
-//     let timer;
-//     clearTimeout(timer);
-//     timer = setTimeout(() => {
-//         update();
-//     }, duration);
-// }
+function onChange() {
+    let duration = 1000;
+    let timer;
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+        update();
+    }, duration);
+}
 
-// function update(){
-//     document.getElementById('output').value = translate(document.getElementById('input').value);
-// }	
+function update(){
+    document.getElementById('output').value = translate(document.getElementById('input').value);
+}	
 // to here
 
 
@@ -638,8 +644,8 @@ Object.defineProperties(Array.prototype, {
 
 
 // uncomment if you're testing
-module.exports = {       
-    convert: function(str) {
-        return translate(str);
-    }	
-};
+// module.exports = {       
+//     convert: function(str) {
+//         return translate(str);
+//     }	
+// };
