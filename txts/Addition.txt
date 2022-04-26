@@ -1,0 +1,4 @@
+func main():
+    a, b = input("Enter two Numbers : ").split()
+    c = a + b
+    print(f"The Sum is {c}")

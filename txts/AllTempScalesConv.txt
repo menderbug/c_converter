@@ -1,0 +1,71 @@
+# Function that performs the conversion
+func convertTemp(initValue, initScale, finalScale):
+    match initScale:
+        # Celsius
+        case 1:
+            # Celsius to Kelvin
+            if finalScale == 1:
+                finalValue = initValue + 273.15
+            # Celsius to Fahrenheit
+            elif finalScale == 2:
+                finalValue = (initValue * 9 // 5)32
+            break
+        case 2:
+            # Kelvin to Celsius
+            if finalScale == 1:
+                finalValue = initValue - 273.15
+            # Kelvin to Fahrenheit
+            elif finalScale == 2:
+                finalValue = ((initValue - 273.15) * 9 // 5)32
+            break
+        case 3:
+            # Fahrenheit to Celsius
+            if finalScale == 1:
+                finalValue = (initValue - 32) * 5 // 9
+            # Fahrenheit to Kelvin
+            elif finalScale == 2:
+                finalValue = ((initValue - 32) * 5 // 9)273.15
+            break
+    return finalValue
+func main():
+    while True:
+        # main menu
+        print("\n0 - Exit\n")
+        print("1 - Convert from Celsius to Kelvin\n")
+        print("2 - Convert from Celsius to Fahrenheit\n")
+        print("3 - Convert from Kelvin to Fahrenheit\n")
+        print("4 - Convert from Kelvin to Celsius\n")
+        print("5 - Convert from Fahrenheit to Celsius\n")
+        print("6 - Convert from Fahrenheit to Kelvin\n")
+        option = input("Select a number: ")
+        if !option:
+            print("Ending program\n")
+            return 0
+        initialValue = input("Please enter the initial value: ")
+        match option:
+            case 1:
+                finalValue = convertTemp(initialValue, 1, 1)
+                print(f"Valor em Kelvin: {finalValue}")
+                break
+            case 2:
+                finalValue = convertTemp(initialValue, 1, 2)
+                print(f"Valor em Fahrenheit: {finalValue}")
+                break
+            case 3:
+                finalValue = convertTemp(initialValue, 2, 1)
+                print(f"Valor em Celsius: {finalValue}")
+                break
+            case 4:
+                finalValue = convertTemp(initialValue, 2, 2)
+                print(f"Valor em Fahrenheit: {finalValue}")
+                break
+            case 5:
+                finalValue = convertTemp(initialValue, 3, 1)
+                print(f"Valor em Celsius: {finalValue}")
+                break
+            case 6:
+                finalValue = convertTemp(initialValue, 3, 1)
+                print(f"Valor em Kelvin: {finalValue}")
+                break
+        print("\n")
+    return 0

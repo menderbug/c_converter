@@ -1,0 +1,12 @@
+func main():
+    n = input("enter the size")
+    print("enter the no")
+    i = 0
+    while i < n:
+        a[i] = input()
+        i += 1
+    i = 0
+    while i < n:
+        add = (a + (i * sizeof(int)))
+        ,print(f"{add}\n")
+        i += 1

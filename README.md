@@ -9,7 +9,7 @@ implement structs
 fix + operator not appearing  
 fix increment/decrement operator  
 stretch goal: pointers?  
-
+even in python you have to declare empty lists before you start adding to them
 
 # Done
 
@@ -26,8 +26,8 @@ trimmed spaces appearing in parsed for loops
 fixed multiple declarations without assignment incorrectly parsing  
 fixed space incorrectly appearing between unary operators (e.g. ~ a)  
 added handling for memory-based functions that are obsolete in python (like malloc)  
-improved detection for function defintiom headers
-added handling for array types
-fixed multi line comments
-fixed ternary expressions
-
+improved detection for function defintiom headers  
+added handling for array types  
+fixed multi line comments  
+fixed ternary expressions  
+added testing suite  

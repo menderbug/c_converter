@@ -1,0 +1,20 @@
+# Program to find the square root of a number
+#  - the current implementation uses the Newton-Raphson method
+#  - mathematical explanation can be found online, and requires basic calculus knowledge
+#
+# for 'fabs' - returns unsigned absolute value
+MAX_ERROR = 1e - 7
+# equivalent to 10^-7 -> accurate upto 7 decimal places
+# can be set according to need or even taken in as input 
+func squareRoot(x):
+    r = 1
+    # initial guess for the root
+    while abs(r*r-x):
+        r = (r + x // r) // 2
+        # value of 'r' moves closer and closer to the actual root value
+    return r
+func main():
+    # the number for which we expect to compute the root
+    num = input()
+    print(f"{squareRoot(num)} \n")
+    return 0

@@ -67,7 +67,6 @@ function parseStmt(toks) {
         case 'typedef':     return parseTypedef(toks);
         case 'struct':      return parseStruct(toks);
         default:            toks.unshift(t);
-
                             return parseEtc(toks);
     }		
 }
@@ -170,7 +169,7 @@ function parseStruct(toks) {
 function parseEtc(toks) {
     if (popType(toks) !== undefined)	//discarding the type
         return parseType(toks);
-    else if (/^[A-Za-z_]\w*(\[.*\])*$/.test(toks[0]))
+    else if (/^[A-Za-z_]\w*$/.test(toks[0]))
         return parseWord(toks);	
     else if (isComment(toks[0]))
         return toks[0];
@@ -178,16 +177,18 @@ function parseEtc(toks) {
         return parseExpr(toks);
 }
 
+// assumption: type has already been consumed by this point
 function parseType(toks) {
     // console.log(toks);
+    if (toks[1] === '[') toks.splice(1, toks.indexOf(']'));     // removes the [] part of array declarations
     if (toks.length === 0)
         return '';
     else if (toks[1] === ('('))
         return new Def(toks.shift(), funcArgs(matchBrackets(toks, '(')), outStmt(toks));		//note: this doesnt parse args and allows bracketless function definitions
-    else if (toks[1] === ('='))                                                             //TODO this should be i % 3 and not x % 3 right?
+    else if (toks[1] === ('='))                                                            
         return parseAssign(toks);
     else if (toks.indexOf('=', 2) !== -1)
-        return parseWord(toks.slice(2));
+        return parseType(toks.slice(toks.indexOf(',') + 2));            //removes declarations without initialization
     else
         return '';
 }
@@ -198,31 +199,20 @@ function parseWord(toks) {
     else if (toks[1] === '=')
         return parseAssign(toks);
     else if (toks[1] === ',')
-        return parseWord(toks.slice(2));
+        return parseWord(toks.slice(2));            //this case should be handled by parseType
     else 
         return parseExpr(toks);
 }
 
 function parseAssign(toks) {
     let dict = {};
-    toks[toks.length - 1] = ',';		//preps the loop operation (brittle)
-    let commas = [...Array(toks.length).keys()].filter(
-        i => toks[i] === ',' && toks.slice(0, i).count('(') === toks.slice(0, i).count(')')
-                             && toks.slice(0, i).count('{') === toks.slice(0, i).count('}')
-    );
-
-    // LMAO have fun reading this one
-    // ok it basically just zips so that (4, 7, 11) turns into ((0, 4), (5, 7), (8, 11))    
-    for (let pair of commas.map((x, i) => [i == 0 ? 0 : commas[i - 1] + 1, x])) {
-        let arg = toks.slice(pair[0], pair[1]);
-        if (arg.includes('=')) {
-            if (arg[3] == '{' && arg.endsWith('}'))
+    if (toks[toks.length -  1] === ';') toks.pop();
+    for (let arg of splitToks(toks))
+        if (arg.includes('='))
+            if (arg[2] === '{' && arg[arg.length - 1] === '}')
                 dict[arg[0]] = parseArray(arg.slice(2));
             else
                 dict[arg[0]] = parseExpr(arg.slice(2));
-        }
-    }
-
     return new Assign(dict);
 }
 
@@ -288,7 +278,8 @@ function parseExpr(toks) {
 
 // currently returns a string object because it cant really have other stuff in it
 function parseArray(toks) {
-
+    let args = funcArgs(toks.slice(1, -1));
+    return `[${args.join(', ')}]`;
 }
 
 function functionCall(name, args) {
@@ -313,6 +304,7 @@ function functionCall(name, args) {
         case 'strset':  return `${args[0]} = ${args[1]} * len(${args[0]})`;
         case 'strnset': return `${args[0]} = (${args[1]} * ${args[2]}) + ${args[0]}[:${args[2]}]`;
         case 'strrev':  return `${args[0]}[::-1]`;
+        case 'fabs':    return `abs(${parseExpr(args[0])})`;
         default:        return new Call(name, args);
     }
 }
@@ -365,6 +357,23 @@ function funcArgs(toks) {
         toks.shift();                   //remove comma
     }
     return args;
+}
+
+// assumption: toks is a list of arguments separated by commas, with no comma at the end
+// returns array of subarrays (of each individual arg)
+function splitToks(toks) {
+    toks.push(',');
+    let commas = [...Array(toks.length).keys()].filter(
+        i => toks[i] === ',' && toks.slice(0, i).count('(') === toks.slice(0, i).count(')')
+                             && toks.slice(0, i).count('{') === toks.slice(0, i).count('}')
+    );
+
+    let args = [];
+    // LMAO have fun reading this one
+    // ok it basically just zips so that (4, 7, 11) turns into ((0, 4), (5, 7), (8, 11))    
+    for (let pair of commas.map((x, i) => [i == 0 ? 0 : commas[i - 1] + 1, x]))
+        args.push(toks.slice(pair[0], pair[1]));
+    return args; 
 }
 
 function tabbed(objs) {
@@ -587,11 +596,14 @@ const pyOps = {
 
 const ignorable = ['malloc', 'calloc', 'free', 'realloc']
 
-// if testing, comment out convert through update
-// function convert() {
-//     return parse(lex(document.getElementById('input').value)).map(x => x.toString()).join('').replace(/\n    \n/g, '\n').replace(/;/g, '');
-// }	
 
+function translate(str) {
+    let tree = parse(lex(str));
+    optimize(tree);
+    return tree.map(x => x.toString()).join('').replace(/\n    \n/g, '\n');
+}	
+
+// if testing, comment all the code from here
 // var input = document.getElementById('input');
 // addEventListener('input', onChange);
 
@@ -605,8 +617,11 @@ const ignorable = ['malloc', 'calloc', 'free', 'realloc']
 // }
 
 // function update(){
-//     document.getElementById('output').value = convert();
+//     document.getElementById('output').value = translate(document.getElementById('input').value);
 // }	
+// to here
+
+
 
 Object.defineProperties(Array.prototype, {
     count: {
@@ -625,8 +640,6 @@ Object.defineProperties(Array.prototype, {
 // uncomment if you're testing
 module.exports = {       
     convert: function(str) {
-        let tree = parse(lex(str));
-        optimize(tree);
-        return tree.map(x => x.toString()).join('').replace(/\n    \n/g, '\n');		//TODO where are new lines coming from
+        return translate(str);
     }	
 };
