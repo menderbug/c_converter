@@ -215,22 +215,19 @@ function parseAssign(toks) {
     if (toks[toks.length -  1] === ';') toks.pop();
     for (let arg of splitToks(toks))
         if (arg.includes('='))
-            if (arg[2] === '{' && arg[arg.length - 1] === '}')
+            if (arg[2] === '{' && arg.at(-1) === '}')
                 dict[arg[0]] = parseArray(arg.slice(2));
             else
                 dict[arg[0]] = parseExpr(arg.slice(2));
     return new Assign(dict);
 }
 
-// im gonna try leaving expressions as arrays?
 function parseExpr(toks) {
-    if (!Array.isArray(toks))
-        return toks;		//TODO should not be necessary, should be single element array
     let arr = [];
     let t;
 
     //kind of crusty but it handles semicolons sneaking in there
-    if (toks[toks.length - 1] === ';')
+    if (toks.at(-1) === ';')
         return parseExpr(toks.slice(0, -1)) + '\n';
 
     //handles function call as expression
@@ -358,7 +355,7 @@ function funcArgs(toks) {
         if (toks[0] !== ',') 
             args.push(toks.shift())     //store arg name
         if (toks[0] === '[' && toks[1] ===']')
-            args[args.length - 1] += toks.splice(0, 2).join('');
+            args.at(-1) += toks.splice(0, 2).join('');
         if (toks.length === 0) break;
         toks.shift();                   //remove comma
     }
@@ -573,6 +570,39 @@ class Comment {
     }
 }
 
+class Arr {
+    constructor(name, dims) {
+        Object.assign(this, {name, dims})
+    }
+    recurse() {
+        return dims.length === 1 ? `[0] * ${dims[0]}` : `[${} for ${} in range(${dims.at(-1)})]`
+    }
+    toString() {
+
+    }
+}
+
+class Expr {}
+
+class Inc extends Expr {
+    constructor(name, op, prefix) {
+        Object.assign(this, {name, op, prefix})
+    }
+    toString() {
+        const str = `${this.name} := ${this.name} ${this.op} 1`
+        return this.prefix ? `(${str}) ${this.op === '+' ? '-' : '+'} 1` : str
+    }
+}
+
+class Infix extends Expr {
+    constructor(left, op, right) {
+        Object.assign(this, {left, op, right})
+    }
+    toString() {
+        return `${this.left} ${this.op in pyOps ? pyOps[this.op] : this.op} ${this.right}`
+    }
+}
+
 //TODO scoping stuff can be considered later, i dont wanna worry about storing variables
 const keywords = [
     'auto', 'break', 'case', 'char', 'const', 'continue', 'default', 'do', 'double', 'else', 'enum', 'extern',
@@ -610,21 +640,21 @@ function translate(str) {
 }	
 
 // if testing, comment all the code from here
-var input = document.getElementById('input');
-addEventListener('input', onChange);
+// var input = document.getElementById('input');
+// addEventListener('input', onChange);
 
-function onChange() {
-    let duration = 1000;
-    let timer;
-    clearTimeout(timer);
-    timer = setTimeout(() => {
-        update();
-    }, duration);
-}
+// function onChange() {
+//     let duration = 1000;
+//     let timer;
+//     clearTimeout(timer);
+//     timer = setTimeout(() => {
+//         update();
+//     }, duration);
+// }
 
-function update(){
-    document.getElementById('output').value = translate(document.getElementById('input').value);
-}	
+// function update(){
+//     document.getElementById('output').value = translate(document.getElementById('input').value);
+// }	
 // to here
 
 
@@ -644,8 +674,8 @@ Object.defineProperties(Array.prototype, {
 
 
 // uncomment if you're testing
-// module.exports = {       
-//     convert: function(str) {
-//         return translate(str);
-//     }	
-// };
+module.exports = {       
+    convert: function(str) {
+        return translate(str);
+    }	
+};

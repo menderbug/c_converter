@@ -6,7 +6,7 @@ const txts = 'txts/';
 let c_code = 'int b[50], int a[50] = {1 + 1, 2 + 2, 3 + 3, 4 + 4}';
 // let c_code = 'f(f(a, b), b);
 
-console.log(c.convert(c_code));
+// console.log(c.convert(c_code));
 
 function test(tname) {	
 	// let expected = fs.readFileSync(folder + tname + '.txt').toString('utf-8');
